@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Brisk Hack AI — Product Walkthrough</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0A0E17;
+    --panel:#121826;
+    --panel-2:#1A2233;
+    --line:#242E44;
+    --text:#E7ECF6;
+    --muted:#8B95AC;
+    --amber:#FFB238;
+    --blue:#4EA1FF;
+    --green:#5FE1A0;
+    --red:#FF6B6B;
+  }
+  *{box-sizing:border-box;}
+  html,body{background:var(--ink); color:var(--text); font-family:'Inter',sans-serif; scroll-behavior:smooth;}
+  h1,h2,h3,h4,.display{font-family:'Space Grotesk',sans-serif;}
+  .mono{font-family:'JetBrains Mono',monospace;}
+  ::-webkit-scrollbar{width:8px; height:8px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+  ::-webkit-scrollbar-thumb{background:var(--line); border-radius:4px;}
+  .screen{display:none;}
+  .screen.active{display:block; animation:fadein .35s ease;}
+  @keyframes fadein{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);}}
+  .nav-item{transition:all .15s ease;}
+  .nav-item:hover{background:var(--panel-2); color:var(--text);}
+  .nav-item.active{background:linear-gradient(90deg, rgba(255,178,56,.14), transparent); border-left:2px solid var(--amber); color:var(--text);}
+  .card{background:var(--panel); border:1px solid var(--line); border-radius:14px;}
+  .card-hi{background:var(--panel-2); border:1px solid var(--line); border-radius:14px;}
+  .pulse-dot{width:7px; height:7px; border-radius:50%; background:var(--green); box-shadow:0 0 0 0 rgba(95,225,160,.6); animation:pulse 1.8s infinite;}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(95,225,160,.55);} 70%{box-shadow:0 0 0 8px rgba(95,225,160,0);} 100%{box-shadow:0 0 0 0 rgba(95,225,160,0);}}
+  .trace{background-image:linear-gradient(90deg, var(--line) 1px, transparent 1px); background-size:14px 1px; height:1px;}
+  .btn-primary{background:var(--amber); color:#1A1204; font-weight:600;}
+  .btn-primary:hover{background:#ffc35e;}
+  .btn-ghost{border:1px solid var(--line); color:var(--text);}
+  .btn-ghost:hover{border-color:var(--blue); color:var(--blue);}
+  .tag{font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:.02em;}
+  .bar{border-radius:6px 6px 0 0; transition:height .6s ease;}
+  input,select,textarea{background:var(--panel-2); border:1px solid var(--line); color:var(--text); border-radius:8px;}
+  input::placeholder,textarea::placeholder{color:var(--muted);}
+  input:focus,select:focus,textarea:focus{outline:none; border-color:var(--blue);}
+  .step-dot{width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-family:'JetBrains Mono',monospace;}
+</style>
+</head>
+<body class="min-h-screen">
+
+<!-- Mission control ticker -->
+<div class="w-full border-b" style="border-color:var(--line); background:#0D1220;">
+  <div class="max-w-[1500px] mx-auto px-5 py-2 flex items-center gap-6 overflow-x-auto whitespace-nowrap text-xs mono" style="color:var(--muted)">
+    <span class="flex items-center gap-2 shrink-0"><span class="pulse-dot"></span><span style="color:var(--green)">LIVE</span> · HackNova 2026</span>
+    <span class="shrink-0">Registrations: <span style="color:var(--text)">2,148</span></span>
+    <span class="shrink-0">Teams forming: <span style="color:var(--text)">312</span></span>
+    <span class="shrink-0">Judges online: <span style="color:var(--text)">18</span></span>
+    <span class="shrink-0">Submission closes in <span id="countdown" style="color:var(--amber)">--:--:--</span></span>
+    <span class="shrink-0">Sponsor slots left: <span style="color:var(--blue)">4</span></span>
+  </div>
+</div>
+
+<div class="max-w-[1500px] mx-auto flex">
+  <!-- Sidebar -->
+  <aside class="w-64 shrink-0 border-r min-h-screen px-3 py-5 hidden md:block" style="border-color:var(--line)">
+    <div class="px-2 mb-6">
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:var(--amber)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8Z" fill="#1A1204"/></svg>
+        </div>
+        <div>
+          <div class="display font-semibold text-sm leading-none">Brisk Hack AI</div>
+          <div class="text-[10px] mono mt-1" style="color:var(--muted)">One platform. Every hackathon.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="text-[10px] mono uppercase tracking-wider px-3 mb-2" style="color:var(--muted)">Start here</div>
+    <nav class="space-y-1 mb-5">
+      <button class="nav-item active w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2" data-target="landing" onclick="showScreen('landing', this)">🏠 Landing page</button>
+      <button class="nav-item w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2" data-target="login" onclick="showScreen('login', this)">🔐 Login</button>
+    </nav>
+
+    <div class="text-[10px] mono uppercase tracking-wider px-3 mb-2" style="color:var(--muted)">Organizer</div>
+    <nav class="space-y-1 mb-5">
+      <button class="nav-item w-full text-left px-3 py-2 rounded-lg text-sm" data-target="org-dash" onclick="showScreen('org-dash', this)">Dashboard</button>
+      <button class="nav-item w-full text-left px-3 py-2 rounded-lg text-sm" data-target="create-event" onclick="showScreen('create-event', this)">Create event</button>
+      <button class="nav-item w-full text-left px-3 py-2 rounded-lg text-sm" data-target="my-events" onclick="showScreen('my-events', this)">My events</button>
+      <button class="nav-item w-full text-left px-3 py-2 rounded-lg text-sm" data-target="analytics" onclick="showScreen('analytics', this)">Analytics</button>
+    </nav>
+
+    <div class="text-[10px] mono uppercase tracking-wider px-3 mb-2" style="color:var(--muted)">Participant</div>
+    <nav class="space-y-1 mb-5">
+      <button class="nav-item w-full text-left px-3 py-2 rounded-lg text-sm" data-target="part-dash" onclick="showScreen('part-dash', this)">Dashboard</button>
+      <button class="nav-item w-full text-left px-3 py-2 rounded-lg text-sm" data-target="team-match" onclick="showScreen('team-match', this)">AI team matching</button>
+      <button class="nav-item w-full text-left px-3 py-2 rounded-lg text-sm" data-target="workspace" onclick="showScreen('workspace', this)">Event workspace</button>
+      <button class="nav-item w-full text-left px-3 py-2 rounded-lg text-sm" data-target="leaderboard" onclick="showScreen('leaderboard', this)">Leaderboard</button>
+      <button class="nav-item w-full text-left px-3 py-2 rounded-lg text-sm" data-target="certificates" onclick="showScreen('certificates', this)">Certificates</button>
+    </nav>
+
+    <div class="text-[10px] mono uppercase tracking-wider px-3 mb-2" style="color:var(--muted)">Shared</div>
+    <nav class="space-y-1">
+      <button class="nav-item w-full text-left px-3 py-2 rounded-lg text-sm" data-target="marketplace" onclick="showScreen('marketplace', this)">Marketplace</button>
+      <button class="nav-item w-full text-left px-3 py-2 rounded-lg text-sm" data-target="notifications" onclick="showScreen('notifications', this)">Notifications</button>
+    </nav>
+
+    <div class="mt-8 mx-2 p-3 rounded-xl card-hi text-[11px]" style="color:var(--muted)">
+      Click through the sidebar to demo each MVP screen. Everything on this page is a static, judge-ready walkthrough.
+    </div>
+  </aside>
+
+  <!-- Mobile nav -->
+  <div class="md:hidden w-full border-b p-3 sticky top-0 z-20" style="background:var(--ink); border-color:var(--line)">
+    <select onchange="showScreen(this.value, null)" class="w-full px-3 py-2 text-sm">
+      <option value="landing">Landing page</option>
+      <option value="login">Login</option>
+      <option value="org-dash">Organizer · Dashboard</option>
+      <option value="create-event">Organizer · Create event</option>
+      <option value="my-events">Organizer · My events</option>
+      <option value="analytics">Organizer · Analytics</option>
+      <option value="part-dash">Participant · Dashboard</option>
+      <option value="team-match">Participant · AI team matching</option>
+      <option value="workspace">Participant · Event workspace</option>
+      <option value="leaderboard">Participant · Leaderboard</option>
+      <option value="certificates">Participant · Certificates</option>
+      <option value="marketplace">Marketplace</option>
+      <option value="notifications">Notifications</option>
+    </select>
+  </div>
+
+  <!-- Main -->
+  <main class="flex-1 min-w-0 p-5 md:p-8">
+
+    <!-- LANDING -->
+    <section id="screen-landing" class="screen active">
+      <div class="relative overflow-hidden rounded-2xl card p-8 md:p-14 mb-6">
+        <div class="absolute inset-0 opacity-40" style="background:radial-gradient(circle at 80% 0%, rgba(78,161,255,.18), transparent 55%), radial-gradient(circle at 0% 100%, rgba(255,178,56,.14), transparent 45%)"></div>
+        <div class="relative">
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full card-hi text-[11px] mono mb-6" style="color:var(--amber)">
+            <span class="pulse-dot" style="background:var(--amber)"></span> NOW ONBOARDING 40+ COLLEGE HACKATHONS
+          </div>
+          <h1 class="display text-4xl md:text-6xl font-semibold leading-[1.05] max-w-3xl">One platform.<br>Every hackathon.<br><span style="color:var(--amber)">Powered by AI.</span></h1>
+          <p class="mt-5 max-w-xl text-sm md:text-base" style="color:var(--muted)">Brisk Hack AI replaces the Google Form, the WhatsApp group, the Discord server and the spreadsheet with one operating system — for organizers, participants and sponsors alike.</p>
+          <div class="mt-8 flex flex-wrap gap-3">
+            <button class="btn-primary px-5 py-3 rounded-lg text-sm" onclick="showScreen('org-dash', document.querySelector('[data-target=org-dash]'))">Run an event →</button>
+            <button class="btn-ghost px-5 py-3 rounded-lg text-sm" onclick="showScreen('part-dash', document.querySelector('[data-target=part-dash]'))">Join as a participant</button>
+          </div>
+          <div class="mt-10 grid grid-cols-3 gap-6 max-w-md">
+            <div><div class="display text-2xl" style="color:var(--amber)">120+</div><div class="text-[11px] mono" style="color:var(--muted)">EVENTS HOSTED</div></div>
+            <div><div class="display text-2xl" style="color:var(--blue)">18K</div><div class="text-[11px] mono" style="color:var(--muted)">PARTICIPANTS</div></div>
+            <div><div class="display text-2xl" style="color:var(--green)">₹42L</div><div class="text-[11px] mono" style="color:var(--muted)">SPONSORSHIP MOVED</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="trace mb-6"></div>
+
+      <h2 class="display text-lg font-semibold mb-1">Everything on one board</h2>
+      <p class="text-sm mb-5" style="color:var(--muted)">Every tool an event needs, replacing the five apps you're currently duct-taping together.</p>
+      <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="card p-5"><div class="text-xl mb-2">🤝</div><div class="font-semibold text-sm mb-1">AI team matching</div><div class="text-xs" style="color:var(--muted)">Pairs solo hackers by skill gaps, timezone and goals.</div></div>
+        <div class="card p-5"><div class="text-xl mb-2">🧭</div><div class="font-semibold text-sm mb-1">AI mentor assistant</div><div class="text-xs" style="color:var(--muted)">On-call guidance in the workspace, no waiting for a human mentor.</div></div>
+        <div class="card p-5"><div class="text-xl mb-2">🏪</div><div class="font-semibold text-sm mb-1">Sponsor &amp; partner marketplace</div><div class="text-xs" style="color:var(--muted)">Venue, food and merch vendors, bookable directly.</div></div>
+        <div class="card p-5"><div class="text-xl mb-2">📋</div><div class="font-semibold text-sm mb-1">Organizer dashboard</div><div class="text-xs" style="color:var(--muted)">Registrations, budget and judging, in one control room.</div></div>
+        <div class="card p-5"><div class="text-xl mb-2">💬</div><div class="font-semibold text-sm mb-1">Unified event workspace</div><div class="text-xs" style="color:var(--muted)">Replaces the WhatsApp group and Discord server.</div></div>
+        <div class="card p-5"><div class="text-xl mb-2">🔔</div><div class="font-semibold text-sm mb-1">Smart notifications</div><div class="text-xs" style="color:var(--muted)">Only what needs your attention, when it needs it.</div></div>
+        <div class="card p-5"><div class="text-xl mb-2">🧠</div><div class="font-semibold text-sm mb-1">AI project evaluation</div><div class="text-xs" style="color:var(--muted)">First-pass scoring so judges spend time on finalists.</div></div>
+        <div class="card p-5"><div class="text-xl mb-2">🏆</div><div class="font-semibold text-sm mb-1">Live leaderboard &amp; certificates</div><div class="text-xs" style="color:var(--muted)">Rankings update live; certificates generate on close.</div></div>
+      </div>
+    </section>
+
+    <!-- LOGIN -->
+    <section id="screen-login" class="screen">
+      <div class="max-w-4xl mx-auto grid md:grid-cols-2 rounded-2xl overflow-hidden card">
+        <div class="p-8 md:p-10">
+          <div class="display text-2xl font-semibold mb-1">Welcome back</div>
+          <div class="text-sm mb-6" style="color:var(--muted)">Log in to continue to your workspace.</div>
+          <div class="space-y-3">
+            <div>
+              <label class="text-xs mono" style="color:var(--muted)">EMAIL</label>
+              <input type="text" placeholder="you@college.edu" class="w-full px-3 py-2.5 mt-1 text-sm">
+            </div>
+            <div>
+              <label class="text-xs mono" style="color:var(--muted)">PASSWORD</label>
+              <input type="password" placeholder="••••••••••" class="w-full px-3 py-2.5 mt-1 text-sm">
+            </div>
+            <button class="btn-primary w-full py-2.5 rounded-lg text-sm mt-2">Log in</button>
+            <div class="text-xs text-center pt-2" style="color:var(--muted)">New here? <span style="color:var(--blue)">Create an account</span></div>
+          </div>
+        </div>
+        <div class="p-8 md:p-10 border-t md:border-t-0 md:border-l" style="border-color:var(--line); background:var(--panel-2)">
+          <div class="text-xs mono uppercase mb-4" style="color:var(--muted)">Continue as</div>
+          <div class="space-y-3">
+            <button onclick="showScreen('org-dash', document.querySelector('[data-target=org-dash]'))" class="w-full text-left card p-4 flex items-center justify-between hover:border-amber-400" style="border-color:var(--line)">
+              <div><div class="font-semibold text-sm">Organizer</div><div class="text-xs" style="color:var(--muted)">Run and manage events</div></div><span style="color:var(--amber)">→</span>
+            </button>
+            <button onclick="showScreen('part-dash', document.querySelector('[data-target=part-dash]'))" class="w-full text-left card p-4 flex items-center justify-between">
+              <div><div class="font-semibold text-sm">Participant</div><div class="text-xs" style="color:var(--muted)">Join events, build, submit</div></div><span style="color:var(--blue)">→</span>
+            </button>
+            <button onclick="showScreen('marketplace', document.querySelector('[data-target=marketplace]'))" class="w-full text-left card p-4 flex items-center justify-between">
+              <div><div class="font-semibold text-sm">Sponsor / partner</div><div class="text-xs" style="color:var(--muted)">Discover events and talent</div></div><span style="color:var(--green)">→</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ORGANIZER DASHBOARD -->
+    <section id="screen-org-dash" class="screen">
+      <div class="flex items-center justify-between mb-5">
+        <div><h2 class="display text-xl font-semibold">Organizer dashboard</h2><div class="text-xs" style="color:var(--muted)">HackNova 2026 · Feb 14–16</div></div>
+        <button class="btn-primary px-4 py-2 rounded-lg text-sm" onclick="showScreen('create-event', document.querySelector('[data-target=create-event]'))">+ New event</button>
+      </div>
+      <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div class="card p-4"><div class="text-xs mono" style="color:var(--muted)">REGISTRATIONS</div><div class="display text-2xl mt-1">2,148</div><div class="text-xs mt-1" style="color:var(--green)">↑ 12% this week</div></div>
+        <div class="card p-4"><div class="text-xs mono" style="color:var(--muted)">TEAMS FORMED</div><div class="display text-2xl mt-1">312</div><div class="text-xs mt-1" style="color:var(--muted)">86 still solo</div></div>
+        <div class="card p-4"><div class="text-xs mono" style="color:var(--muted)">SPONSOR FUNDS</div><div class="display text-2xl mt-1">₹6.4L</div><div class="text-xs mt-1" style="color:var(--muted)">4 slots open</div></div>
+        <div class="card p-4"><div class="text-xs mono" style="color:var(--muted)">JUDGES ACTIVE</div><div class="display text-2xl mt-1">18 / 20</div><div class="text-xs mt-1" style="color:var(--amber)">2 pending invite</div></div>
+      </div>
+      <div class="grid lg:grid-cols-3 gap-4">
+        <div class="lg:col-span-2 card p-5">
+          <div class="font-semibold text-sm mb-4">Setup checklist</div>
+          <div class="space-y-3 text-sm">
+            <div class="flex items-center gap-3"><span style="color:var(--green)">✓</span> Venue booked — IIMT Auditorium</div>
+            <div class="flex items-center gap-3"><span style="color:var(--green)">✓</span> Food partner confirmed — 3 meals/day</div>
+            <div class="flex items-center gap-3"><span style="color:var(--green)">✓</span> Judging rubric published</div>
+            <div class="flex items-center gap-3"><span style="color:var(--amber)">◐</span> Sponsor onboarding — 4 of 6 signed</div>
+            <div class="flex items-center gap-3" style="color:var(--muted)"><span>○</span> Certificate template — not started</div>
+          </div>
+        </div>
+        <div class="card p-5">
+          <div class="font-semibold text-sm mb-4">Team trust &amp; reputation</div>
+          <div class="space-y-3 text-sm">
+            <div class="flex justify-between"><span>Verified colleges</span><span class="mono" style="color:var(--green)">94%</span></div>
+            <div class="flex justify-between"><span>Repeat participants</span><span class="mono" style="color:var(--blue)">38%</span></div>
+            <div class="flex justify-between"><span>Flagged submissions</span><span class="mono" style="color:var(--red)">3</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CREATE EVENT -->
+    <section id="screen-create-event" class="screen">
+      <h2 class="display text-xl font-semibold mb-1">Create event</h2>
+      <div class="text-xs mb-6" style="color:var(--muted)">Step 2 of 4 — Format &amp; tracks</div>
+      <div class="flex items-center gap-2 mb-8 max-w-lg">
+        <div class="step-dot" style="background:var(--green); color:#08210f">✓</div><div class="trace flex-1" style="background:var(--green)"></div>
+        <div class="step-dot" style="background:var(--amber); color:#1A1204">2</div><div class="trace flex-1"></div>
+        <div class="step-dot card-hi" style="color:var(--muted)">3</div><div class="trace flex-1"></div>
+        <div class="step-dot card-hi" style="color:var(--muted)">4</div>
+      </div>
+      <div class="grid lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 card p-6 space-y-4">
+          <div><label class="text-xs mono" style="color:var(--muted)">EVENT NAME</label><input class="w-full px-3 py-2.5 mt-1 text-sm" value="HackNova 2026"></div>
+          <div class="grid sm:grid-cols-2 gap-4">
+            <div><label class="text-xs mono" style="color:var(--muted)">FORMAT</label><select class="w-full px-3 py-2.5 mt-1 text-sm"><option>In-person</option><option>Hybrid</option><option>Online</option></select></div>
+            <div><label class="text-xs mono" style="color:var(--muted)">TEAM SIZE</label><select class="w-full px-3 py-2.5 mt-1 text-sm"><option>2–4 members</option><option>1–4 members</option><option>3–5 members</option></select></div>
+          </div>
+          <div><label class="text-xs mono" style="color:var(--muted)">TRACKS</label>
+            <div class="flex flex-wrap gap-2 mt-2">
+              <span class="tag px-3 py-1.5 rounded-full card-hi">AI / ML</span>
+              <span class="tag px-3 py-1.5 rounded-full" style="background:rgba(255,178,56,.15); color:var(--amber); border:1px solid rgba(255,178,56,.4)">FinTech ✕</span>
+              <span class="tag px-3 py-1.5 rounded-full card-hi">Climate</span>
+              <span class="tag px-3 py-1.5 rounded-full card-hi">Open innovation</span>
+              <span class="tag px-3 py-1.5 rounded-full card-hi border-dashed" style="border:1px dashed var(--line)">+ Add track</span>
+            </div>
+          </div>
+          <div><label class="text-xs mono" style="color:var(--muted)">JUDGING RUBRIC</label><textarea class="w-full px-3 py-2.5 mt-1 text-sm h-20" placeholder="Innovation (30%), Technical depth (30%), Impact (20%), Presentation (20%)"></textarea></div>
+          <div class="flex justify-between pt-2">
+            <button class="btn-ghost px-4 py-2 rounded-lg text-sm">← Back</button>
+            <button class="btn-primary px-4 py-2 rounded-lg text-sm">Continue →</button>
+          </div>
+        </div>
+        <div class="card p-5 h-fit">
+          <div class="font-semibold text-sm mb-3">Live preview</div>
+          <div class="card-hi p-4">
+            <div class="font-semibold text-sm">HackNova 2026</div>
+            <div class="text-xs mt-1" style="color:var(--muted)">In-person · 2–4 members</div>
+            <div class="flex gap-1.5 mt-3 flex-wrap"><span class="tag px-2 py-1 rounded-full" style="background:rgba(78,161,255,.15); color:var(--blue)">AI/ML</span><span class="tag px-2 py-1 rounded-full" style="background:rgba(255,178,56,.15); color:var(--amber)">FinTech</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- MY EVENTS -->
+    <section id="screen-my-events" class="screen">
+      <h2 class="display text-xl font-semibold mb-5">My events</h2>
+      <div class="grid md:grid-cols-2 gap-4">
+        <div class="card p-5">
+          <div class="flex justify-between items-start"><div class="font-semibold text-sm">HackNova 2026</div><span class="tag px-2 py-1 rounded-full" style="background:rgba(95,225,160,.15); color:var(--green)">LIVE</span></div>
+          <div class="text-xs mt-1" style="color:var(--muted)">Feb 14–16 · 2,148 registered</div>
+          <div class="trace my-4"></div>
+          <div class="flex justify-between text-xs"><span style="color:var(--muted)">Submissions</span><span class="mono">184 / 312 teams</span></div>
+        </div>
+        <div class="card p-5">
+          <div class="flex justify-between items-start"><div class="font-semibold text-sm">FinTech Sprint '26</div><span class="tag px-2 py-1 rounded-full" style="background:rgba(78,161,255,.15); color:var(--blue)">PLANNING</span></div>
+          <div class="text-xs mt-1" style="color:var(--muted)">Mar 20–21 · Registration opens Feb 20</div>
+          <div class="trace my-4"></div>
+          <div class="flex justify-between text-xs"><span style="color:var(--muted)">Sponsors confirmed</span><span class="mono">2 / 5</span></div>
+        </div>
+        <div class="card p-5 opacity-70">
+          <div class="flex justify-between items-start"><div class="font-semibold text-sm">CampusBuild Winter</div><span class="tag px-2 py-1 rounded-full card-hi" style="color:var(--muted)">CLOSED</span></div>
+          <div class="text-xs mt-1" style="color:var(--muted)">Dec 6–8, 2025 · Certificates issued</div>
+        </div>
+        <button class="card p-5 border-dashed flex items-center justify-center text-sm" style="border:1px dashed var(--line); color:var(--muted)" onclick="showScreen('create-event', document.querySelector('[data-target=create-event]'))">+ Create new event</button>
+      </div>
+    </section>
+
+    <!-- ANALYTICS -->
+    <section id="screen-analytics" class="screen">
+      <h2 class="display text-xl font-semibold mb-5">Analytics — HackNova 2026</h2>
+      <div class="grid lg:grid-cols-3 gap-4 mb-6">
+        <div class="lg:col-span-2 card p-5">
+          <div class="font-semibold text-sm mb-4">Registrations over time</div>
+          <div class="flex items-end gap-3 h-40">
+            <div class="bar flex-1" style="height:22%; background:var(--line)"></div>
+            <div class="bar flex-1" style="height:34%; background:var(--line)"></div>
+            <div class="bar flex-1" style="height:40%; background:var(--line)"></div>
+            <div class="bar flex-1" style="height:58%; background:var(--blue)"></div>
+            <div class="bar flex-1" style="height:71%; background:var(--blue)"></div>
+            <div class="bar flex-1" style="height:88%; background:var(--amber)"></div>
+            <div class="bar flex-1" style="height:100%; background:var(--amber)"></div>
+          </div>
+          <div class="flex justify-between text-[10px] mono mt-2" style="color:var(--muted)"><span>W1</span><span>W2</span><span>W3</span><span>W4</span><span>W5</span><span>W6</span><span>W7</span></div>
+        </div>
+        <div class="card p-5">
+          <div class="font-semibold text-sm mb-4">Traffic sources</div>
+          <div class="space-y-3 text-sm">
+            <div><div class="flex justify-between text-xs mb-1"><span>College outreach</span><span class="mono">46%</span></div><div class="h-1.5 rounded-full" style="background:var(--line)"><div class="h-1.5 rounded-full" style="width:46%; background:var(--amber)"></div></div></div>
+            <div><div class="flex justify-between text-xs mb-1"><span>Instagram</span><span class="mono">28%</span></div><div class="h-1.5 rounded-full" style="background:var(--line)"><div class="h-1.5 rounded-full" style="width:28%; background:var(--blue)"></div></div></div>
+            <div><div class="flex justify-between text-xs mb-1"><span>Referral</span><span class="mono">18%</span></div><div class="h-1.5 rounded-full" style="background:var(--line)"><div class="h-1.5 rounded-full" style="width:18%; background:var(--green)"></div></div></div>
+            <div><div class="flex justify-between text-xs mb-1"><span>Direct</span><span class="mono">8%</span></div><div class="h-1.5 rounded-full" style="background:var(--line)"><div class="h-1.5 rounded-full" style="width:8%; background:var(--muted)"></div></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="grid sm:grid-cols-3 gap-4">
+        <div class="card p-4"><div class="text-xs mono" style="color:var(--muted)">AVG TEAM FORM TIME</div><div class="display text-xl mt-1">4.2 hrs</div></div>
+        <div class="card p-4"><div class="text-xs mono" style="color:var(--muted)">SUBMISSION RATE</div><div class="display text-xl mt-1">67%</div></div>
+        <div class="card p-4"><div class="text-xs mono" style="color:var(--muted)">JUDGE SLA</div><div class="display text-xl mt-1">92% on-time</div></div>
+      </div>
+    </section>
+
+    <!-- PARTICIPANT DASHBOARD -->
+    <section id="screen-part-dash" class="screen">
+      <h2 class="display text-xl font-semibold mb-1">Welcome back, Joshua</h2>
+      <div class="text-xs mb-6" style="color:var(--muted)">You're registered for 2 events</div>
+      <div class="grid lg:grid-cols-3 gap-4">
+        <div class="lg:col-span-2 space-y-4">
+          <div class="card p-5">
+            <div class="flex justify-between items-center mb-3"><div class="font-semibold text-sm">HackNova 2026</div><span class="tag px-2 py-1 rounded-full" style="background:rgba(95,225,160,.15); color:var(--green)">IN PROGRESS</span></div>
+            <div class="grid grid-cols-3 gap-3 text-center">
+              <div class="card-hi py-2"><div class="text-[10px] mono" style="color:var(--muted)">TEAM</div><div class="text-sm font-semibold mt-1">Team Brisk</div></div>
+              <div class="card-hi py-2"><div class="text-[10px] mono" style="color:var(--muted)">TRACK</div><div class="text-sm font-semibold mt-1">AI / ML</div></div>
+              <div class="card-hi py-2"><div class="text-[10px] mono" style="color:var(--muted)">RANK</div><div class="text-sm font-semibold mt-1" style="color:var(--amber)">#7</div></div>
+            </div>
+            <button class="btn-primary w-full py-2 rounded-lg text-sm mt-4" onclick="showScreen('workspace', document.querySelector('[data-target=workspace]'))">Open workspace →</button>
+          </div>
+          <div class="card p-5">
+            <div class="font-semibold text-sm mb-3">Suggested for you</div>
+            <div class="flex items-center justify-between text-sm"><span>FinTech Sprint '26 · registration open</span><span style="color:var(--blue)">View →</span></div>
+          </div>
+        </div>
+        <div class="card p-5">
+          <div class="font-semibold text-sm mb-3">Recent notifications</div>
+          <div class="space-y-3 text-xs">
+            <div><span style="color:var(--amber)">●</span> Mentor slot open — 4:00 PM, Track: AI/ML</div>
+            <div><span style="color:var(--blue)">●</span> New teammate suggestion match: 91%</div>
+            <div style="color:var(--muted)"><span>●</span> Submission checklist due in 6 hrs</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- AI TEAM MATCHING -->
+    <section id="screen-team-match" class="screen">
+      <h2 class="display text-xl font-semibold mb-1">AI team matching</h2>
+      <div class="text-xs mb-6" style="color:var(--muted)">Based on your skills (React, FastAPI) and track (AI / ML)</div>
+      <div class="grid md:grid-cols-3 gap-4">
+        <div class="card p-5">
+          <div class="flex justify-between items-start mb-3"><div><div class="font-semibold text-sm">Ananya Rao</div><div class="text-xs" style="color:var(--muted)">3rd yr · CSE</div></div><div class="display text-lg" style="color:var(--green)">94%</div></div>
+          <div class="flex flex-wrap gap-1.5 mb-3"><span class="tag px-2 py-1 rounded-full card-hi">UI/UX</span><span class="tag px-2 py-1 rounded-full card-hi">Figma</span><span class="tag px-2 py-1 rounded-full card-hi">React</span></div>
+          <div class="text-xs mb-4" style="color:var(--muted)">Fills your design gap. Free evenings, same timezone.</div>
+          <div class="flex gap-2"><button class="btn-primary flex-1 py-2 rounded-lg text-xs">Invite</button><button class="btn-ghost flex-1 py-2 rounded-lg text-xs">Skip</button></div>
+        </div>
+        <div class="card p-5">
+          <div class="flex justify-between items-start mb-3"><div><div class="font-semibold text-sm">Kabir Sen</div><div class="text-xs" style="color:var(--muted)">2nd yr · AI/DS</div></div><div class="display text-lg" style="color:var(--amber)">87%</div></div>
+          <div class="flex flex-wrap gap-1.5 mb-3"><span class="tag px-2 py-1 rounded-full card-hi">Python</span><span class="tag px-2 py-1 rounded-full card-hi">PyTorch</span><span class="tag px-2 py-1 rounded-full card-hi">CV</span></div>
+          <div class="text-xs mb-4" style="color:var(--muted)">Strong model skills. Won 2 hackathons this year.</div>
+          <div class="flex gap-2"><button class="btn-primary flex-1 py-2 rounded-lg text-xs">Invite</button><button class="btn-ghost flex-1 py-2 rounded-lg text-xs">Skip</button></div>
+        </div>
+        <div class="card p-5">
+          <div class="flex justify-between items-start mb-3"><div><div class="font-semibold text-sm">Meher Iyer</div><div class="text-xs" style="color:var(--muted)">3rd yr · IT</div></div><div class="display text-lg" style="color:var(--blue)">79%</div></div>
+          <div class="flex flex-wrap gap-1.5 mb-3"><span class="tag px-2 py-1 rounded-full card-hi">Pitching</span><span class="tag px-2 py-1 rounded-full card-hi">Product</span></div>
+          <div class="text-xs mb-4" style="color:var(--muted)">Good generalist. Has judged 3 college events.</div>
+          <div class="flex gap-2"><button class="btn-primary flex-1 py-2 rounded-lg text-xs">Invite</button><button class="btn-ghost flex-1 py-2 rounded-lg text-xs">Skip</button></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- EVENT WORKSPACE -->
+    <section id="screen-workspace" class="screen">
+      <h2 class="display text-xl font-semibold mb-1">Event workspace — Team Brisk</h2>
+      <div class="text-xs mb-5" style="color:var(--muted)">Replaces your WhatsApp group and Discord server</div>
+      <div class="grid lg:grid-cols-3 gap-4">
+        <div class="lg:col-span-2 card p-5 flex flex-col h-[420px]">
+          <div class="flex gap-4 text-xs mono mb-4 pb-3 border-b" style="border-color:var(--line); color:var(--muted)">
+            <span style="color:var(--text)">CHAT</span><span>TASKS</span><span>FILES</span><span>MENTOR AI</span>
+          </div>
+          <div class="flex-1 space-y-4 overflow-y-auto text-sm">
+            <div class="flex gap-2"><div class="w-7 h-7 rounded-full shrink-0" style="background:var(--blue)"></div><div><div class="text-xs font-semibold">Kabir</div><div class="card-hi px-3 py-2 rounded-lg mt-1 inline-block">pushed the model training notebook, F1 at 0.84</div></div></div>
+            <div class="flex gap-2"><div class="w-7 h-7 rounded-full shrink-0" style="background:var(--amber)"></div><div><div class="text-xs font-semibold">Ananya</div><div class="card-hi px-3 py-2 rounded-lg mt-1 inline-block">figma link updated, dark mode added</div></div></div>
+            <div class="flex gap-2"><div class="w-7 h-7 rounded-full shrink-0 flex items-center justify-center text-xs" style="background:var(--green); color:#08210f">AI</div><div><div class="text-xs font-semibold" style="color:var(--green)">Mentor Assistant</div><div class="card-hi px-3 py-2 rounded-lg mt-1 inline-block">Your model's F1 score is solid — consider adding a confusion matrix to your demo for judges.</div></div></div>
+          </div>
+          <div class="mt-3 flex gap-2"><input class="flex-1 px-3 py-2 text-sm" placeholder="Message the team or ask the AI mentor..."><button class="btn-primary px-4 rounded-lg text-sm">Send</button></div>
+        </div>
+        <div class="space-y-4">
+          <div class="card p-5">
+            <div class="font-semibold text-sm mb-3">Tasks</div>
+            <div class="space-y-2 text-xs">
+              <div class="flex items-center gap-2"><span style="color:var(--green)">✓</span> Finalize dataset</div>
+              <div class="flex items-center gap-2"><span style="color:var(--green)">✓</span> Train baseline model</div>
+              <div class="flex items-center gap-2"><span style="color:var(--amber)">◐</span> Build demo UI</div>
+              <div class="flex items-center gap-2" style="color:var(--muted)"><span>○</span> Record pitch video</div>
+            </div>
+          </div>
+          <div class="card p-5">
+            <div class="font-semibold text-sm mb-3">Files</div>
+            <div class="space-y-2 text-xs" style="color:var(--muted)">
+              <div>📄 train_model.ipynb</div>
+              <div>📄 pitch_deck_v3.pdf</div>
+              <div>📄 ui_mockup.fig</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- NOTIFICATIONS -->
+    <section id="screen-notifications" class="screen">
+      <h2 class="display text-xl font-semibold mb-5">Notifications</h2>
+      <div class="max-w-2xl space-y-3">
+        <div class="card p-4 flex gap-3"><span class="mt-0.5" style="color:var(--amber)">●</span><div><div class="text-sm font-semibold">Submission window closes in 6 hours</div><div class="text-xs" style="color:var(--muted)">HackNova 2026 · 2 hrs ago</div></div></div>
+        <div class="card p-4 flex gap-3"><span class="mt-0.5" style="color:var(--blue)">●</span><div><div class="text-sm font-semibold">New AI teammate match: Ananya Rao (94%)</div><div class="text-xs" style="color:var(--muted)">Team matching · 5 hrs ago</div></div></div>
+        <div class="card p-4 flex gap-3"><span class="mt-0.5" style="color:var(--green)">●</span><div><div class="text-sm font-semibold">Mentor session confirmed with Dr. Verma</div><div class="text-xs" style="color:var(--muted)">Workspace · yesterday</div></div></div>
+        <div class="card p-4 flex gap-3 opacity-60"><span class="mt-0.5" style="color:var(--muted)">●</span><div><div class="text-sm font-semibold">Sponsor Razorpay joined HackNova 2026</div><div class="text-xs" style="color:var(--muted)">Marketplace · 2 days ago</div></div></div>
+        <div class="card p-4 flex gap-3 opacity-60"><span class="mt-0.5" style="color:var(--muted)">●</span><div><div class="text-sm font-semibold">Certificate ready for CampusBuild Winter</div><div class="text-xs" style="color:var(--muted)">Certificates · 3 days ago</div></div></div>
+      </div>
+    </section>
+
+    <!-- LEADERBOARD -->
+    <section id="screen-leaderboard" class="screen">
+      <div class="flex items-center justify-between mb-5">
+        <h2 class="display text-xl font-semibold">Live leaderboard</h2>
+        <span class="tag px-2 py-1 rounded-full flex items-center gap-1.5" style="background:rgba(95,225,160,.15); color:var(--green)"><span class="pulse-dot"></span>LIVE</span>
+      </div>
+      <div class="card overflow-hidden">
+        <table class="w-full text-sm">
+          <thead><tr class="text-left text-xs mono" style="color:var(--muted); background:var(--panel-2)">
+            <th class="px-4 py-3">RANK</th><th class="px-4 py-3">TEAM</th><th class="px-4 py-3">TRACK</th><th class="px-4 py-3">SCORE</th><th class="px-4 py-3">TREND</th>
+          </tr></thead>
+          <tbody>
+            <tr class="border-t" style="border-color:var(--line)"><td class="px-4 py-3 mono" style="color:var(--amber)">1</td><td class="px-4 py-3 font-semibold">TeamOverflow</td><td class="px-4 py-3" style="color:var(--muted)">AI / ML</td><td class="px-4 py-3 mono">96.4</td><td class="px-4 py-3" style="color:var(--green)">↑ 2</td></tr>
+            <tr class="border-t" style="border-color:var(--line)"><td class="px-4 py-3 mono">2</td><td class="px-4 py-3 font-semibold">Byte Federation</td><td class="px-4 py-3" style="color:var(--muted)">FinTech</td><td class="px-4 py-3 mono">94.1</td><td class="px-4 py-3" style="color:var(--muted)">— 0</td></tr>
+            <tr class="border-t" style="border-color:var(--line)"><td class="px-4 py-3 mono">3</td><td class="px-4 py-3 font-semibold">NullPointers</td><td class="px-4 py-3" style="color:var(--muted)">Climate</td><td class="px-4 py-3 mono">91.8</td><td class="px-4 py-3" style="color:var(--red)">↓ 1</td></tr>
+            <tr class="border-t" style="border-color:var(--line); background:rgba(255,178,56,.06)"><td class="px-4 py-3 mono" style="color:var(--amber)">7</td><td class="px-4 py-3 font-semibold">Team Brisk (you)</td><td class="px-4 py-3" style="color:var(--muted)">AI / ML</td><td class="px-4 py-3 mono">84.2</td><td class="px-4 py-3" style="color:var(--green)">↑ 3</td></tr>
+            <tr class="border-t" style="border-color:var(--line)"><td class="px-4 py-3 mono">8</td><td class="px-4 py-3 font-semibold">Segfault Squad</td><td class="px-4 py-3" style="color:var(--muted)">Open</td><td class="px-4 py-3 mono">82.7</td><td class="px-4 py-3" style="color:var(--muted)">— 0</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- CERTIFICATES -->
+    <section id="screen-certificates" class="screen">
+      <h2 class="display text-xl font-semibold mb-5">Certificates</h2>
+      <div class="grid lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 card p-8 relative overflow-hidden">
+          <div class="absolute inset-0 opacity-[0.06]" style="background-image:linear-gradient(45deg, var(--amber) 25%, transparent 25%); background-size:20px 20px;"></div>
+          <div class="relative border-2 rounded-xl p-8 text-center" style="border-color:var(--amber)">
+            <div class="text-[10px] mono tracking-[0.3em]" style="color:var(--muted)">CERTIFICATE OF ACHIEVEMENT</div>
+            <div class="display text-2xl mt-4">Joshua</div>
+            <div class="text-sm mt-2" style="color:var(--muted)">has secured <span style="color:var(--amber)">Rank #7</span> in HackNova 2026, Track: AI / ML</div>
+            <div class="flex justify-center gap-8 mt-8 text-xs mono" style="color:var(--muted)">
+              <div>ORGANIZER<br><span style="color:var(--text)">Brisk Hack AI</span></div>
+              <div>DATE<br><span style="color:var(--text)">16 Feb 2026</span></div>
+              <div>ID<br><span style="color:var(--text)">BHA-2026-0731</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="card p-5">
+          <div class="font-semibold text-sm mb-4">Your certificates</div>
+          <div class="space-y-3 text-xs">
+            <div class="flex justify-between items-center card-hi px-3 py-2 rounded-lg"><span>HackNova 2026</span><span style="color:var(--blue)">Download</span></div>
+            <div class="flex justify-between items-center card-hi px-3 py-2 rounded-lg"><span>CampusBuild Winter</span><span style="color:var(--blue)">Download</span></div>
+            <div class="flex justify-between items-center card-hi px-3 py-2 rounded-lg opacity-50"><span>FinTech Sprint '26</span><span>Pending</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- MARKETPLACE -->
+    <section id="screen-marketplace" class="screen">
+      <h2 class="display text-xl font-semibold mb-1">Marketplace</h2>
+      <div class="text-xs mb-5" style="color:var(--muted)">Sponsors, venues, food and merchandise partners — booked directly</div>
+      <div class="flex flex-wrap gap-2 mb-5 text-xs mono">
+        <button class="market-filter px-3 py-1.5 rounded-full card-hi" data-category="">ALL</button>
+        <button class="market-filter px-3 py-1.5 rounded-full card-hi" data-category="sponsor">SPONSORS</button>
+        <button class="market-filter px-3 py-1.5 rounded-full card-hi" data-category="venue">VENUES</button>
+        <button class="market-filter px-3 py-1.5 rounded-full card-hi" data-category="food">FOOD</button>
+        <button class="market-filter px-3 py-1.5 rounded-full card-hi" data-category="merch">MERCH</button>
+        <input id="market-search" class="px-3 py-1.5 text-xs flex-1 min-w-[180px]" placeholder="Search marketplace...">
+        <button id="market-list-business" class="btn-primary px-3 py-1.5 rounded-lg">+ LIST BUSINESS</button>
+        <button id="market-my-bookings" class="btn-ghost px-3 py-1.5 rounded-lg">MY BOOKINGS</button>
+      </div>
+      <div id="marketplace-grid" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div class="card p-5 text-sm" style="color:var(--muted)">Loading marketplace...</div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+  function showScreen(id, btn){
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById('screen-' + id).classList.add('active');
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    if(btn) btn.classList.add('active');
+    window.scrollTo({top:0, behavior:'smooth'});
+    if(id === 'marketplace' && typeof loadMarketplace === 'function') loadMarketplace();
+  }
+
+  // Countdown ticker
+  const deadline = new Date().getTime() + (14*3600 + 22*60)*1000;
+  function tick(){
+    const now = new Date().getTime();
+    let diff = Math.max(0, deadline - now);
+    const h = String(Math.floor(diff/3600000)).padStart(2,'0');
+    const m = String(Math.floor((diff%3600000)/60000)).padStart(2,'0');
+    const s = String(Math.floor((diff%60000)/1000)).padStart(2,'0');
+    document.getElementById('countdown').textContent = h+':'+m+':'+s;
+  }
+  tick();
+  setInterval(tick, 1000);
+</script>
+
+<script>
+  const API = '/api';
+  const authToken = () => localStorage.getItem('brisk_token');
+  async function api(path, options={}) {
+    const headers = {'Content-Type':'application/json', ...(options.headers || {})};
+    if (authToken()) headers.Authorization = `Bearer ${authToken()}`;
+    const response = await fetch(API + path, {...options, headers});
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.detail || 'Request failed');
+    return data;
+  }
+  function toast(message, ok=true){
+    let box=document.getElementById('brisk-toast');
+    if(!box){
+      box=document.createElement('div'); box.id='brisk-toast';
+      box.className='fixed right-5 bottom-5 z-50 px-4 py-3 rounded-lg text-sm shadow-xl';
+      document.body.appendChild(box);
+    }
+    box.style.background=ok?'#153a2a':'#4a2020'; box.style.color='#fff';
+    box.textContent=message; box.style.display='block';
+    setTimeout(()=>box.style.display='none',3500);
+  }
+
+  document.addEventListener('DOMContentLoaded', async () => {
+    // Login form
+    const loginSection=document.getElementById('screen-login');
+    const loginInputs=loginSection?.querySelectorAll('input');
+    const loginBtn=[...(loginSection?.querySelectorAll('button')||[])].find(b=>b.textContent.trim()==='Log in');
+    if(loginBtn && loginInputs?.length>=2){
+      loginBtn.addEventListener('click', async ()=>{
+        try{
+          const result=await api('/auth/login',{method:'POST',body:JSON.stringify({email:loginInputs[0].value,password:loginInputs[1].value})});
+          localStorage.setItem('brisk_token',result.access_token);
+          localStorage.setItem('brisk_user',JSON.stringify(result.user));
+          toast(`Welcome ${result.user.name}`);
+          showScreen(result.user.role==='organizer'?'org-dash':'part-dash', document.querySelector(`[data-target=${result.user.role==='organizer'?'org-dash':'part-dash'}]`));
+        }catch(e){toast(e.message,false)}
+      });
+    }
+
+    // Turn "Create an account" text into a working quick-signup flow.
+    const signupText=[...(loginSection?.querySelectorAll('span')||[])].find(x=>x.textContent.includes('Create an account'));
+    if(signupText){
+      signupText.style.cursor='pointer';
+      signupText.addEventListener('click', async ()=>{
+        const name=prompt('Your name:'); if(!name) return;
+        const email=prompt('Email:'); if(!email) return;
+        const password=prompt('Password (minimum 6 characters):'); if(!password) return;
+        const role=(prompt('Role: participant or organizer','participant')||'participant').toLowerCase();
+        try{
+          const result=await api('/auth/signup',{method:'POST',body:JSON.stringify({name,email,password,role})});
+          localStorage.setItem('brisk_token',result.access_token); localStorage.setItem('brisk_user',JSON.stringify(result.user));
+          toast('Account created successfully');
+        }catch(e){toast(e.message,false)}
+      });
+    }
+
+    // Create event form
+    const create=document.getElementById('screen-create-event');
+    const continueBtn=[...(create?.querySelectorAll('button')||[])].find(b=>b.textContent.includes('Continue'));
+    if(continueBtn){
+      continueBtn.addEventListener('click', async ()=>{
+        const name=create.querySelector('input')?.value || 'Untitled Event';
+        const selects=create.querySelectorAll('select');
+        const description=create.querySelector('textarea')?.value || '';
+        const teamText=selects[1]?.value || '2–4 members';
+        const teamSize=parseInt((teamText.match(/\d+/g)||['4']).slice(-1)[0]);
+        try{
+          const result=await api('/events',{method:'POST',body:JSON.stringify({name,description,format:(selects[0]?.value||'In-person').toLowerCase(),team_size:teamSize,tracks:'AI / ML, FinTech, Climate, Open innovation'})});
+          toast(`Event created: #${result.id}`);
+          showScreen('my-events',document.querySelector('[data-target=my-events]'));
+          loadEvents();
+        }catch(e){toast(e.message + ' (Organizer login required)',false)}
+      });
+    }
+
+    // Show backend health in ticker
+    try{
+      const health=await api('/health');
+      const ticker=document.querySelector('.pulse-dot')?.parentElement;
+      if(ticker) ticker.title=`Backend: ${health.status}`;
+    }catch(e){ toast('Backend connection failed', false); }
+
+    document.querySelectorAll('.market-filter').forEach(btn=>btn.addEventListener('click',()=>{
+      marketCategory=btn.dataset.category||''; loadMarketplace();
+    }));
+    document.getElementById('market-search')?.addEventListener('input',()=>{
+      clearTimeout(window.marketSearchTimer); window.marketSearchTimer=setTimeout(loadMarketplace,300);
+    });
+    document.getElementById('market-list-business')?.addEventListener('click',createMarketplaceListing);
+    document.getElementById('market-my-bookings')?.addEventListener('click',showMyMarketplaceBookings);
+
+    loadEvents();
+    loadMarketplace();
+  });
+
+  const marketIcons={sponsor:'💳',venue:'🏛️',food:'🍱',merch:'👕'};
+  let marketCategory='';
+
+  function escapeHtml(value=''){
+    return String(value).replace(/[&<>'"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+  }
+
+  async function loadMarketplace(){
+    const grid=document.getElementById('marketplace-grid');
+    if(!grid) return;
+    const search=document.getElementById('market-search')?.value.trim() || '';
+    const params=new URLSearchParams();
+    if(marketCategory) params.set('category',marketCategory);
+    if(search) params.set('search',search);
+    grid.innerHTML='<div class="card p-5 text-sm" style="color:var(--muted)">Loading marketplace...</div>';
+    try{
+      const items=await api('/marketplace'+(params.toString()?`?${params}`:''));
+      if(!items.length){
+        grid.innerHTML='<div class="card p-5 text-sm" style="color:var(--muted)">No listings found. Organizer or sponsor login karke “List business” use karo.</div>';
+        return;
+      }
+      grid.innerHTML=items.map(item=>`<div class="card p-5">
+        <div class="flex justify-between items-start gap-3"><div class="w-9 h-9 rounded-lg flex items-center justify-center" style="background:var(--panel-2)">${marketIcons[item.category]||'🏪'}</div><span class="tag px-2 py-1 rounded-full card-hi">${escapeHtml(item.category.toUpperCase())}</span></div>
+        <div class="font-semibold text-sm mt-3">${escapeHtml(item.name)}</div>
+        <div class="text-xs mt-1 min-h-[32px]" style="color:var(--muted)">${escapeHtml(item.description||'No description')}</div>
+        <div class="text-xs mt-2 mono" style="color:var(--blue)">${item.price ? `₹${Number(item.price).toLocaleString('en-IN')} ${escapeHtml(item.price_unit||'')}` : 'Contact for price'}</div>
+        <div class="text-xs mt-1" style="color:var(--muted)">${escapeHtml(item.location||'Location not specified')}</div>
+        <button onclick="bookMarketplace(${item.id}, '${escapeHtml(item.name).replace(/'/g,'\&#39;')}')" class="btn-primary w-full py-2 rounded-lg text-xs mt-3">Request booking</button>
+      </div>`).join('');
+    }catch(e){grid.innerHTML=`<div class="card p-5 text-sm" style="color:var(--red)">${escapeHtml(e.message)}</div>`}
+  }
+
+  async function bookMarketplace(id,name){
+    if(!authToken()){toast('Pehle login karo',false); showScreen('login',document.querySelector('[data-target=login]')); return;}
+    const quantity=parseInt(prompt(`Quantity for ${name}:`,'1')||'0');
+    if(!quantity) return;
+    const booking_date=prompt('Required date (example: 2026-08-15):','')||'';
+    const note=prompt('Requirement / message:','')||'';
+    try{
+      await api(`/marketplace/${id}/book`,{method:'POST',body:JSON.stringify({quantity,booking_date,note})});
+      toast('Booking request sent');
+    }catch(e){toast(e.message,false)}
+  }
+
+  async function showMyMarketplaceBookings(){
+    if(!authToken()){toast('Pehle login karo',false);return;}
+    try{
+      const items=await api('/marketplace/bookings/me');
+      if(!items.length){alert('Abhi koi booking nahi hai.');return;}
+      alert(items.map(x=>`#${x.id} ${x.listing_name} — ${x.status}`).join('
+'));
+    }catch(e){toast(e.message,false)}
+  }
+
+  async function createMarketplaceListing(){
+    if(!authToken()){toast('Organizer ya sponsor account se login karo',false);return;}
+    const name=prompt('Business / service name:'); if(!name) return;
+    const category=(prompt('Category: sponsor, venue, food, merch','venue')||'').toLowerCase();
+    const description=prompt('Short description:','')||'';
+    const location=prompt('Location:','')||'';
+    const price=Number(prompt('Price (0 for contact price):','0')||0);
+    const price_unit=prompt('Price unit, example: per meal / per day:','')||'';
+    try{
+      await api('/marketplace',{method:'POST',body:JSON.stringify({name,category,description,location,price,price_unit})});
+      toast('Marketplace listing created'); loadMarketplace();
+    }catch(e){toast(e.message+' (Organizer/Sponsor login required)',false)}
+  }
+
+  async function loadEvents(){
+    try{
+      const events=await api('/events');
+      const grid=document.querySelector('#screen-my-events .grid');
+      if(!grid || !events.length) return;
+      const createButton=grid.querySelector('button');
+      grid.querySelectorAll('[data-api-event]').forEach(x=>x.remove());
+      events.forEach(event=>{
+        const card=document.createElement('div');
+        card.className='card p-5'; card.dataset.apiEvent='1';
+        card.innerHTML=`<div class="flex justify-between items-start"><div class="font-semibold text-sm">${event.name}</div><span class="tag px-2 py-1 rounded-full card-hi">${event.status.toUpperCase()}</span></div><div class="text-xs mt-1" style="color:var(--muted)">${event.format} · Team size ${event.team_size}</div><div class="trace my-4"></div><div class="text-xs" style="color:var(--muted)">${event.tracks}</div>`;
+        grid.insertBefore(card,createButton);
+      });
+    }catch(e){ console.warn(e); }
+  }
+</script>
+
+</body>
+</html>
